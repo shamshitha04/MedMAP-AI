@@ -1,0 +1,70 @@
+# =========================
+# 1. Virtual Environments
+# =========================
+MedMap/
+venv/
+env/
+.venv/
+
+# =========================
+# 2. Environment Secrets
+# =========================
+.env
+.env.local
+.env.*
+!.env.example
+
+# =========================
+# 3. Python & FastAPI Cache
+# =========================
+__pycache__/
+*.py[cod]
+*$py.class
+*.log
+.pytest_cache/
+.coverage
+htmlcov/
+
+# =========================
+# 4. Next.js & Node Frontend
+# =========================
+frontend/node_modules/
+frontend/.next/
+frontend/out/
+frontend/build/
+frontend-v2/node_modules/
+frontend-v2/.next/
+frontend-v2/out/
+frontend-v2/build/
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnp.*
+.pnp.js
+
+# =========================
+# 4b. IDE & Editor
+# =========================
+.vscode/settings.json
+.idea/
+
+# =========================
+# 5. OS Generated Files
+# =========================
+.DS_Store
+Thumbs.db
+
+# =========================
+# 6. Databases (HACKATHON MODE)
+# =========================
+# We intentionally DO NOT ignore .db files (like backend/database/medmap.db)
+# so the pre-seeded SQLite ground-truth database works out-of-the-box for demo day.
+# *.sqlite3
+
+# =========================
+# 7. Large Dataset Files (exceed GitHub 100 MB limit)
+# =========================
+dataset/all_id_interaction.csv
+dataset/interaction_counts_4.xlsx
+# *.db

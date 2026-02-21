@@ -1,0 +1,124 @@
+{
+	"hashes": {
+		"b2aa29363a272e80a73bdef1191e994d3c1dea15c736de6d42006f95cb7f43c6": {
+			"medicines": [
+				{
+					"original_raw_input": "Augmentin 625 Duo Tablet",
+					"extracted": {
+						"raw_input": "Augmentin 625 Duo Tablet",
+						"brand": "augmentin",
+						"variant": "625",
+						"generic_name": "co-amoxiclav",
+						"strength": null,
+						"form": "tablet",
+						"frequency": "2 times per day"
+					},
+					"matched_medicine": {
+						"id": 1,
+						"brand_name": "Augmentin 625 Duo",
+						"generic_name": "co-amoxiclav",
+						"official_strength": "625 mg",
+						"form": "tablet",
+						"combination_flag": true,
+						"final_similarity_score": 0.97,
+						"risk_classification": "High",
+						"clinical_risk_tier": "Low",
+						"manual_review_required": false
+					},
+					"guardrail_logs": [
+						"CACHE_HIT: Golden cache intercept — hash matched demo Augmentin 625 image.",
+						"VARIANT_SEPARATION: Numeric value '625' stripped from brand name and stored in brand_variant field.",
+						"NORMALIZATION: Lowercased brand to 'augmentin'; standardized 'Tab' -> 'tablet'; normalized 'BD' -> '2 times per day'.",
+						"SPARSE_PENALTY: Pinecone hybrid search applied sparse penalty — variant '625' matched; entries with '375' down-ranked.",
+						"COMBINATION_LOCK: SQLite record has combination_flag=True; product locked as single combination (co-amoxiclav). Will NOT split into amoxicillin + clavulanic acid.",
+						"STRENGTH_INJECTION: LLM-extracted strength overridden with SQLite ground truth: '625 mg'."
+					]
+				}
+			],
+			"guardrail_logs": [
+				"CACHE_HIT: Golden cache intercept — hash matched demo Augmentin 625 image.",
+				"PIPELINE_COMPLETE: 1 medicine processed. All Phase 1 and Phase 2 guardrails passed."
+			]
+		},
+		"104e56764fbed3df55a569a5c4e41b0e486612fcc537db60a2255c3e628323fc": {
+			"medicines": [
+				{
+					"original_raw_input": "Panadol 500mg Tablet",
+					"extracted": {
+						"raw_input": "Panadol 500mg Tablet",
+						"brand": "panadol",
+						"variant": "500",
+						"generic_name": "paracetamol",
+						"strength": null,
+						"form": "tablet",
+						"frequency": "3 times per day"
+					},
+					"matched_medicine": {
+						"id": 3,
+						"brand_name": "Panadol 500mg",
+						"generic_name": "paracetamol",
+						"official_strength": "500 mg",
+						"form": "tablet",
+						"combination_flag": false,
+						"final_similarity_score": 0.99,
+						"risk_classification": "High",
+						"clinical_risk_tier": "Low",
+						"manual_review_required": false
+					},
+					"guardrail_logs": [
+						"CACHE_HIT: Golden cache intercept — hash matched demo Panadol 500 image.",
+						"VARIANT_SEPARATION: Numeric value '500' stripped from brand name and stored in brand_variant field.",
+						"NORMALIZATION: Lowercased brand to 'panadol'; standardized form to 'tablet'; normalized frequency to '3 times per day'.",
+						"SPARSE_PENALTY: Pinecone hybrid search applied sparse penalty — variant '500' matched correctly.",
+						"COMBINATION_LOCK: SQLite record has combination_flag=False; no combination lock applied.",
+						"STRENGTH_INJECTION: LLM-extracted strength overridden with SQLite ground truth: '500 mg'."
+					]
+				}
+			],
+			"guardrail_logs": [
+				"CACHE_HIT: Golden cache intercept — hash matched demo Panadol 500 image.",
+				"PIPELINE_COMPLETE: 1 medicine processed. All Phase 1 and Phase 2 guardrails passed."
+			]
+		},
+		"7a51572866544d98a679edf775ff6cda9e5b2387b5b158d6998c32885ab65ae1": {
+			"medicines": [
+				{
+					"original_raw_input": "Amoxicillin 500mg Capsule",
+					"extracted": {
+						"raw_input": "Amoxicillin 500mg Capsule",
+						"brand": "amoxicillin",
+						"variant": "500",
+						"generic_name": "amoxicillin",
+						"strength": null,
+						"form": "capsule",
+						"frequency": "3 times per day"
+					},
+					"matched_medicine": {
+						"id": 4,
+						"brand_name": "Amoxicillin 500mg",
+						"generic_name": "amoxicillin",
+						"official_strength": "500 mg",
+						"form": "capsule",
+						"combination_flag": false,
+						"final_similarity_score": 0.98,
+						"risk_classification": "High",
+						"clinical_risk_tier": "Low",
+						"manual_review_required": false
+					},
+					"guardrail_logs": [
+						"CACHE_HIT: Golden cache intercept — hash matched demo Amoxicillin 500 image.",
+						"VARIANT_SEPARATION: Numeric value '500' stripped from brand name and stored in brand_variant field.",
+						"NORMALIZATION: Lowercased brand to 'amoxicillin'; standardized form to 'capsule'; normalized frequency to '3 times per day'.",
+						"SPARSE_PENALTY: Pinecone hybrid search applied sparse penalty — variant '500' matched correctly.",
+						"COMBINATION_LOCK: SQLite record has combination_flag=False; no combination lock applied.",
+						"STRENGTH_INJECTION: LLM-extracted strength overridden with SQLite ground truth: '500 mg'."
+					]
+				}
+			],
+			"guardrail_logs": [
+				"CACHE_HIT: Golden cache intercept — hash matched demo Amoxicillin 500 image.",
+				"PIPELINE_COMPLETE: 1 medicine processed. All Phase 1 and Phase 2 guardrails passed."
+			]
+		}
+	}
+}

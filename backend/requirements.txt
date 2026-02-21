@@ -1,0 +1,25 @@
+# --- Backend Framework & Async Orchestration ---
+fastapi[standard]>=0.100.0
+python-multipart
+pydantic>=2.0.0
+
+# --- Database & Knowledge Graph (Local & Cloud) ---
+sqlalchemy>=2.0.0
+aiosqlite
+pinecone[asyncio]
+pinecone-text
+
+# --- AI & Machine Learning Pipeline ---
+openai>=1.0.0
+transformers
+torch
+sentence-transformers
+numpy
+
+# --- Security & Environment ---
+python-dotenv
+
+# --- Development & Testing ---
+httpx
+pytest
+pytest-asyncio
