@@ -361,12 +361,12 @@ export default function ClinicalDashboard({ apiUrl }: Props) {
 	   ═══════════════════════════════════════════════════════════════ */
 
 	return (
-		<div className="relative min-h-screen bg-deep text-fg">
+		<div className="relative flex h-screen flex-col overflow-hidden bg-deep text-fg">
 			{/* Background effects */}
 			<div className="bg-grid-pattern pointer-events-none fixed inset-0" />
 			<div className="pointer-events-none fixed left-1/2 top-0 h-[700px] w-[1100px] -translate-x-1/2 rounded-full bg-brand/[0.035] blur-[140px]" />
 
-			<div className="relative z-10">
+			<div className="relative z-10 flex flex-1 flex-col overflow-hidden">
 				{/* ═══════════════ HEADER ═══════════════ */}
 				<motion.header
 					initial={{ opacity: 0, y: -14 }}
@@ -393,24 +393,24 @@ export default function ClinicalDashboard({ apiUrl }: Props) {
 					</div>
 				</motion.header>
 
-				{/* ═══════════════ MAIN GRID ═══════════════ */}
+				{/* ═══════════════ MAIN LAYOUT ═══════════════ */}
 				<motion.div
 					variants={stagger}
 					initial="hidden"
 					animate="show"
-					className="mx-auto grid max-w-[1640px] grid-cols-1 gap-6 p-5 lg:grid-cols-[390px_1fr] lg:p-6"
+					className="mx-auto flex flex-1 max-w-[1640px] w-full flex-col gap-10 overflow-auto p-5 pb-10 lg:p-6 lg:pb-12"
 				>
-					{/* ── LEFT COLUMN: INPUT ── */}
-					<motion.aside variants={fadeUp} className="space-y-4">
-						<form onSubmit={runAnalysis} className="space-y-4">
+					{/* ── TOP ROW: INPUT (side-by-side) ── */}
+					<form onSubmit={runAnalysis} className="space-y-4">
+						<motion.div variants={fadeUp} className="grid grid-cols-1 gap-6 md:grid-cols-2">
 							{/* Text Input */}
-							<GlassPanel className="p-5">
+							<GlassPanel className="flex flex-col p-5">
 								<label className="mb-3 flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.14em] text-fg-dim">
 									<FileText className="h-3.5 w-3.5 text-brand" />
 									Prescription Text
 								</label>
 								<textarea
-									className="min-h-[150px] w-full resize-none rounded-xl border border-white/[0.06] bg-elevated px-4 py-3 text-sm text-fg placeholder:text-fg-faint transition-all focus:border-brand/40 focus:outline-none focus:ring-2 focus:ring-brand/20"
+									className="min-h-[150px] w-full flex-1 resize-none rounded-xl border border-white/[0.06] bg-elevated px-4 py-3 text-sm text-fg placeholder:text-fg-faint transition-all focus:border-brand/40 focus:outline-none focus:ring-2 focus:ring-brand/20"
 									value={rawText}
 									onChange={(e) => setRawText(e.target.value)}
 									placeholder="e.g. Augmentin 625 Tab BD"
@@ -418,7 +418,7 @@ export default function ClinicalDashboard({ apiUrl }: Props) {
 							</GlassPanel>
 
 							{/* Upload Zone */}
-							<GlassPanel className="p-5">
+							<GlassPanel className="flex flex-col p-5">
 								<label className="mb-3 flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.14em] text-fg-dim">
 									<Upload className="h-3.5 w-3.5 text-brand" />
 									Visual Scan / PDF
@@ -438,7 +438,7 @@ export default function ClinicalDashboard({ apiUrl }: Props) {
 									}}
 									onDrop={handleDrop}
 									onClick={() => fileInputRef.current?.click()}
-									className={`flex min-h-[120px] cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed transition-all ${
+									className={`flex min-h-[120px] flex-1 cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed transition-all ${
 										dragActive
 											? "border-brand/50 bg-brand/[0.06]"
 											: "border-white/[0.07] bg-elevated/40 hover:border-white/[0.14] hover:bg-elevated/60"
@@ -483,8 +483,10 @@ export default function ClinicalDashboard({ apiUrl }: Props) {
 									)}
 								</AnimatePresence>
 							</GlassPanel>
+						</motion.div>
 
-							{/* Prescriber + Submit */}
+						{/* Prescriber + Submit */}
+						<motion.div variants={fadeUp} className="grid grid-cols-1 items-end gap-4 md:grid-cols-[1fr_auto]">
 							<GlassPanel className="p-5">
 								<label className="mb-2.5 block text-[10px] font-bold uppercase tracking-[0.14em] text-fg-dim">
 									Prescriber ID{" "}
@@ -496,46 +498,44 @@ export default function ClinicalDashboard({ apiUrl }: Props) {
 									onChange={(e) => setPrescriberId(e.target.value)}
 									placeholder="e.g. DR-001"
 								/>
-								<button
-									type="submit"
-									disabled={loading}
-									className="group mt-4 flex w-full items-center justify-center gap-2.5 rounded-xl bg-brand py-3.5 text-sm font-bold text-white shadow-[0_4px_24px_rgba(124,77,255,0.25)] transition-all hover:bg-brand/90 hover:shadow-[0_4px_32px_rgba(124,77,255,0.35)] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
-								>
-									{loading ? (
-										<>
-											<Loader2 className="h-4 w-4 animate-spin" />
-											Analyzing…
-										</>
-									) : (
-										<>
-											<Zap className="h-4 w-4 transition-transform group-hover:scale-110" />
-											Analyze Prescription
-										</>
-									)}
-								</button>
 							</GlassPanel>
-						</form>
-					</motion.aside>
+							<button
+								type="submit"
+								disabled={loading}
+								className="group flex h-[52px] items-center justify-center gap-2.5 rounded-xl bg-brand px-8 text-sm font-bold text-white shadow-[0_4px_24px_rgba(124,77,255,0.25)] transition-all hover:bg-brand/90 hover:shadow-[0_4px_32px_rgba(124,77,255,0.35)] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
+							>
+								{loading ? (
+									<>
+										<Loader2 className="h-4 w-4 animate-spin" />
+										Analyzing…
+									</>
+								) : (
+									<>
+										<Zap className="h-4 w-4 transition-transform group-hover:scale-110" />
+										Analyze Prescription
+									</>
+								)}
+							</button>
+						</motion.div>
+					</form>
 
-					{/* ── RIGHT COLUMN: RESULTS ── */}
-					<motion.main variants={fadeUp} className="space-y-6">
-						{/* Error */}
-						<AnimatePresence>
-							{error && (
-								<motion.div
-									initial={{ opacity: 0, y: -10 }}
-									animate={{ opacity: 1, y: 0 }}
-									exit={{ opacity: 0, y: -10 }}
-									className="rounded-xl border border-danger/20 bg-danger/[0.06] px-5 py-4 text-sm text-danger"
-								>
-									<strong className="font-bold">Error:&nbsp;</strong>
-									{error}
-								</motion.div>
-							)}
-						</AnimatePresence>
+					{/* Error */}
+					<AnimatePresence>
+						{error && (
+							<motion.div
+								initial={{ opacity: 0, y: -10 }}
+								animate={{ opacity: 1, y: 0 }}
+								exit={{ opacity: 0, y: -10 }}
+								className="rounded-xl border border-danger/20 bg-danger/[0.06] px-5 py-4 text-sm text-danger"
+							>
+								<strong className="font-bold">Error:&nbsp;</strong>
+								{error}
+							</motion.div>
+						)}
+					</AnimatePresence>
 
-						{/* ═══════════ FLOW COMPARISON ═══════════ */}
-						<div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
+					{/* ═══════════ FLOW COMPARISON ═══════════ */}
+					<motion.div variants={fadeUp} className="grid min-h-[340px] grid-cols-1 gap-6 xl:grid-cols-2">
 							{/* FLOW A - Raw Extraction */}
 							<GlassPanel className="flex flex-col overflow-hidden border-danger/10">
 								<div className="border-b border-danger/[0.08] bg-danger/[0.03] px-5 py-4">
@@ -676,8 +676,7 @@ export default function ClinicalDashboard({ apiUrl }: Props) {
 									)}
 								</div>
 							</GlassPanel>
-						</div>
-					</motion.main>
+					</motion.div>
 				</motion.div>
 			</div>
 		</div>
