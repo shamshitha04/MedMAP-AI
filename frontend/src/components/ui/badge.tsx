@@ -4,7 +4,7 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 
 /* ------------------------------------------------------------------ */
-/*  Dark-themed Badge with clinical colour variants                   */
+/*  Shadcn-style Badge with clinical colour variants                  */
 /* ------------------------------------------------------------------ */
 
 const badgeVariants = cva(

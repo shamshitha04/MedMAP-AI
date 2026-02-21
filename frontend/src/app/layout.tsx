@@ -26,17 +26,13 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-	title: "MedMap AI · Clinical Decision Support",
-	description:
-		"Deterministic, Explainable AI prescription analysis with clinical guardrails.",
+	title: "MedMap AI \u00B7 Clinical Decision Support",
+	description: "Deterministic, Explainable AI prescription analysis with clinical guardrails.",
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
 	return (
-		<html
-			lang="en"
-			className={`${syne.variable} ${dmSans.variable} ${jetbrainsMono.variable}`}
-		>
+		<html lang="en" className={`${syne.variable} ${dmSans.variable} ${jetbrainsMono.variable}`}>
 			<body>{children}</body>
 		</html>
 	);

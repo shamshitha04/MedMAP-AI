@@ -3,7 +3,7 @@ import * as React from "react";
 import { cn } from "@/lib/utils";
 
 /* ------------------------------------------------------------------ */
-/*  Dark glass Card components for clinical dashboard                 */
+/*  Shadcn-style Card components (adapted for Tailwind v4)            */
 /* ------------------------------------------------------------------ */
 
 const Card = React.forwardRef<
@@ -39,10 +39,7 @@ const CardTitle = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <div
     ref={ref}
-    className={cn(
-      "font-display text-sm font-bold leading-none tracking-tight",
-      className,
-    )}
+    className={cn("font-display text-sm font-bold leading-none tracking-tight", className)}
     {...props}
   />
 ));
@@ -80,11 +77,4 @@ const CardFooter = React.forwardRef<
 ));
 CardFooter.displayName = "CardFooter";
 
-export {
-  Card,
-  CardHeader,
-  CardFooter,
-  CardTitle,
-  CardDescription,
-  CardContent,
-};
+export { Card, CardHeader, CardFooter, CardTitle, CardDescription, CardContent };
