@@ -10,7 +10,6 @@ import {
 } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-	Shield,
 	Upload,
 	AlertTriangle,
 	CheckCircle2,
@@ -18,7 +17,6 @@ import {
 	Pill,
 	X,
 	Loader2,
-	Sparkles,
 	Lock,
 	Zap,
 } from "lucide-react";
@@ -263,14 +261,6 @@ export default function ClinicalDashboard({ apiUrl }: Props) {
 
 	const item: ProcessedMedicine | undefined = data?.medicines?.[0];
 	const variantToken = item?.extracted?.variant || null;
-
-	const allLogs: string[] = useMemo(() => {
-		const merged = [
-			...(item?.guardrail_logs ?? []),
-			...(data?.guardrail_logs ?? []),
-		];
-		return [...new Set(merged)];
-	}, [item, data]);
 
 	const flowAWarning = useMemo(() => {
 		if (!item) return null;
@@ -687,59 +677,6 @@ export default function ClinicalDashboard({ apiUrl }: Props) {
 								</div>
 							</GlassPanel>
 						</div>
-
-						{/* ═══════════ GUARDRAIL AUDIT TRAIL ═══════════ */}
-						<GlassPanel className="overflow-hidden border-caution/10">
-							<div className="border-b border-caution/[0.08] bg-caution/[0.03] px-5 py-4">
-								<div className="flex items-center gap-2.5">
-									<Shield className="h-4 w-4 text-caution" />
-									<h2 className="font-display text-sm font-bold tracking-tight">
-										Guardrail Audit Trail
-									</h2>
-									<PillBadge className="border-caution/30 bg-caution/10 text-caution">
-										{allLogs.length}
-									</PillBadge>
-								</div>
-								<p className="mt-1 text-[10px] text-fg-faint">
-									Every deterministic guardrail rule that fired during
-									this extraction.
-								</p>
-							</div>
-							<div className="p-5">
-								{allLogs.length === 0 ? (
-									<div className="flex flex-col items-center py-10 text-fg-faint">
-										<Sparkles className="mb-3 h-8 w-8 opacity-15" />
-										<p className="text-[11px]">
-											No guardrail events recorded. Run an analysis to
-											populate the audit trail.
-										</p>
-									</div>
-								) : (
-									<ol className="space-y-2">
-										{allLogs.map((log, i) => (
-											<motion.li
-												key={`${log.slice(0, 20)}-${i}`}
-												initial={{ opacity: 0, x: -16 }}
-												animate={{ opacity: 1, x: 0 }}
-												transition={{
-													delay: i * 0.04,
-													duration: 0.35,
-													ease: "easeOut",
-												}}
-												className="flex items-start gap-3 rounded-xl border border-white/[0.04] bg-elevated/40 px-4 py-3"
-											>
-												<span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-caution/15 text-[10px] font-extrabold text-caution">
-													{i + 1}
-												</span>
-												<span className="text-[11px] leading-relaxed text-fg-dim">
-													{log}
-												</span>
-											</motion.li>
-										))}
-									</ol>
-								)}
-							</div>
-						</GlassPanel>
 					</motion.main>
 				</motion.div>
 			</div>
