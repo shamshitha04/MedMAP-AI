@@ -19,7 +19,9 @@ import {
 	Loader2,
 	Lock,
 	Zap,
+	Home,
 } from "lucide-react";
+import Link from "next/link";
 import type {
 	ExtractionResponse,
 	MatchedMedicine,
@@ -250,7 +252,7 @@ function GlassPanel({
 type Props = { apiUrl: string };
 
 export default function ClinicalDashboard({ apiUrl }: Props) {
-	const [rawText, setRawText] = useState("Augmentin 625 Tab BD");
+	const [rawText, setRawText] = useState("");
 	const [prescriberId, setPrescriberId] = useState("dr-1");
 	const [file, setFile] = useState<File | null>(null);
 	const [dragActive, setDragActive] = useState(false);
@@ -389,7 +391,16 @@ export default function ClinicalDashboard({ apiUrl }: Props) {
 								</p>
 							</div>
 						</div>
-						<StatusOrb active={loading} />
+						<div className="flex items-center gap-3">
+							<Link
+								href="/"
+								className="flex items-center gap-2 rounded-lg border border-white/[0.06] bg-white/[0.04] px-3 py-1.5 text-xs font-medium text-fg-dim transition-all hover:border-brand/30 hover:bg-brand/10 hover:text-brand"
+							>
+								<Home className="h-3.5 w-3.5" />
+								Home
+							</Link>
+							<StatusOrb active={loading} />
+						</div>
 					</div>
 				</motion.header>
 
