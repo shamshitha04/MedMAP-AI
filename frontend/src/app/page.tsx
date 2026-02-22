@@ -1,8 +1,6 @@
-import ClinicalDashboard from "../components/custom/ClinicalDashboard";
-
-const apiUrl = "http://127.0.0.1:8000/extract";
+import HomePage from "../components/custom/HomePage";
 
 export default function Home() {
-	return <ClinicalDashboard apiUrl={apiUrl} />;
+	return <HomePage />;
 }
 

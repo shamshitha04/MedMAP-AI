@@ -236,7 +236,7 @@ function GlassPanel({
 }) {
 	return (
 		<div
-			className={`rounded-2xl border border-white/[0.06] bg-surface ${className}`}
+			className={`rounded-2xl border border-white/[0.08] bg-surface ${className}`}
 		>
 			{children}
 		</div>
@@ -398,7 +398,7 @@ export default function ClinicalDashboard({ apiUrl }: Props) {
 					variants={stagger}
 					initial="hidden"
 					animate="show"
-					className="mx-auto flex flex-1 max-w-[1640px] w-full flex-col gap-10 overflow-auto p-5 pb-10 lg:p-6 lg:pb-12"
+					className="mx-auto flex flex-1 max-w-[1640px] w-full flex-col gap-6 overflow-auto p-5 pb-20 lg:p-6 lg:pb-24"
 				>
 					{/* ── TOP ROW: INPUT (side-by-side) ── */}
 					<form onSubmit={runAnalysis} className="space-y-4">
@@ -535,9 +535,9 @@ export default function ClinicalDashboard({ apiUrl }: Props) {
 					</AnimatePresence>
 
 					{/* ═══════════ FLOW COMPARISON ═══════════ */}
-					<motion.div variants={fadeUp} className="grid min-h-[340px] grid-cols-1 gap-6 xl:grid-cols-2">
+					<motion.div variants={fadeUp} className="grid grid-cols-1 gap-5 md:grid-cols-2">
 							{/* FLOW A - Raw Extraction */}
-							<GlassPanel className="flex flex-col overflow-hidden border-danger/10">
+							<GlassPanel className="flex min-h-[300px] flex-col overflow-hidden border-danger/20">
 								<div className="border-b border-danger/[0.08] bg-danger/[0.03] px-5 py-4">
 									<div className="flex items-center gap-2.5">
 										<span className="flex h-2 w-2 rounded-full bg-danger shadow-[0_0_8px_rgba(255,71,87,0.6)]" />
@@ -573,7 +573,7 @@ export default function ClinicalDashboard({ apiUrl }: Props) {
 							</GlassPanel>
 
 							{/* FLOW B - Grounded Match */}
-							<GlassPanel className="flex flex-col overflow-hidden border-safe/10">
+							<GlassPanel className="flex min-h-[300px] flex-col overflow-hidden border-safe/20">
 								<div className="border-b border-safe/[0.08] bg-safe/[0.03] px-5 py-4">
 									<div className="flex items-center gap-2.5">
 										<span className="flex h-2 w-2 rounded-full bg-safe shadow-[0_0_8px_rgba(0,214,143,0.6)]" />
