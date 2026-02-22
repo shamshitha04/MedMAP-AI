@@ -1,10 +1,13 @@
 from __future__ import annotations
 
+import base64
 import hashlib
+import io
 import json
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 
+import fitz  # PyMuPDF
 from openai import AsyncOpenAI
 
 from app.core.config import settings
@@ -144,6 +147,40 @@ def _extract_from_local_ner(raw_text: str) -> ExtractedMedicine:
 	)
 
 
+def _is_pdf_base64(payload: str) -> bool:
+	"""Detect if a base64 payload is a PDF by checking the magic bytes."""
+	trimmed = payload.strip()
+	# data:application/pdf;base64,... prefix
+	if trimmed.startswith("data:application/pdf"):
+		return True
+	# Raw base64 — PDF magic bytes %PDF- encode to JVBER
+	raw = trimmed.split(",")[-1] if "," in trimmed else trimmed
+	return raw.startswith("JVBER")
+
+
+def _pdf_base64_to_png_base64_pages(pdf_base64: str) -> List[str]:
+	"""Convert a PDF (base64-encoded) into a list of PNG base64 strings, one per page."""
+	raw = pdf_base64.strip()
+	if "," in raw:
+		raw = raw.split(",", 1)[1]
+	pdf_bytes = base64.b64decode(raw)
+
+	doc = fitz.open(stream=pdf_bytes, filetype="pdf")
+	png_pages: List[str] = []
+	try:
+		for page in doc:
+			# Render at 2x zoom for better OCR quality
+			pix = page.get_pixmap(matrix=fitz.Matrix(2, 2))
+			png_bytes = pix.tobytes("png")
+			png_pages.append(base64.b64encode(png_bytes).decode("ascii"))
+	finally:
+		doc.close()
+
+	if not png_pages:
+		raise ValueError("PDF contained no renderable pages")
+	return png_pages
+
+
 async def _extract_from_openai(image_base64: str) -> Optional[ExtractedMedicine]:
 	if not settings.openai_api_key:
 		return None
@@ -197,6 +234,13 @@ async def _extract_from_openai(image_base64: str) -> Optional[ExtractedMedicine]
 		raise ValueError(f"OpenAI VLM extraction failed: {exc}") from exc
 
 
+async def _extract_from_pdf(pdf_base64: str) -> Optional[ExtractedMedicine]:
+	"""Convert PDF to PNG page images, then run VLM extraction on the first page."""
+	png_pages = _pdf_base64_to_png_base64_pages(pdf_base64)
+	# Use the first page for extraction (most prescriptions are single-page)
+	return await _extract_from_openai(png_pages[0])
+
+
 async def extract_with_vlm(image_base64: str) -> Optional[ExtractedMedicine]:
 	return await _extract_from_openai(image_base64)
 
@@ -209,7 +253,18 @@ async def extract_medicine(request: ExtractionRequest, guardrail_logs: list[str]
 		if not settings.openai_api_key:
 			raise ValueError("OPENAI_API_KEY is not configured for image extraction")
 
-		openai_extracted = await extract_with_vlm(request.image_base64)
+		# Detect PDF and convert to PNG first
+		is_pdf = (
+			(request.file_mime_type or "").lower() == "application/pdf"
+			or _is_pdf_base64(request.image_base64)
+		)
+
+		if is_pdf:
+			guardrail_logs.append("PDF detected — converting to PNG for VLM extraction")
+			openai_extracted = await _extract_from_pdf(request.image_base64)
+		else:
+			openai_extracted = await extract_with_vlm(request.image_base64)
+
 		if openai_extracted:
 			guardrail_logs.append("Image extracted via OpenAI structured outputs parse()")
 			return openai_extracted

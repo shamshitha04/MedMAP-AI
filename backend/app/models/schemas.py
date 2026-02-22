@@ -9,6 +9,7 @@ class ExtractionRequest(BaseModel):
 	image_base64: Optional[str] = None
 	raw_text: Optional[str] = None
 	prescriber_id: Optional[str] = None
+	file_mime_type: Optional[str] = None
 
 	@model_validator(mode="after")
 	def validate_input_present(self) -> "ExtractionRequest":

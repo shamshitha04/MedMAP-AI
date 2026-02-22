@@ -318,6 +318,7 @@ export default function ClinicalDashboard({ apiUrl }: Props) {
 				image_base64: string | null;
 				raw_text: string | null;
 				prescriber_id: string | null;
+				file_mime_type: string | null;
 			};
 
 			if (file) {
@@ -325,6 +326,7 @@ export default function ClinicalDashboard({ apiUrl }: Props) {
 					image_base64: await toBase64Payload(file),
 					raw_text: null,
 					prescriber_id: trimmedPrescriber,
+					file_mime_type: file.type || null,
 				};
 			} else {
 				if (!trimmedText)
@@ -335,6 +337,7 @@ export default function ClinicalDashboard({ apiUrl }: Props) {
 					raw_text: trimmedText,
 					image_base64: null,
 					prescriber_id: trimmedPrescriber,
+					file_mime_type: null,
 				};
 			}
 
