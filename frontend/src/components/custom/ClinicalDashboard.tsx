@@ -261,15 +261,7 @@ export default function ClinicalDashboard({ apiUrl }: Props) {
 	const [data, setData] = useState<ExtractionResponse | null>(null);
 	const fileInputRef = useRef<HTMLInputElement | null>(null);
 
-	const item: ProcessedMedicine | undefined = data?.medicines?.[0];
-	const variantToken = item?.extracted?.variant || null;
-
-	const flowAWarning = useMemo(() => {
-		if (!item) return null;
-		if (!item.extracted.variant)
-			return "No risky numeric assumption detected in the raw extraction.";
-		return `Potentially unsafe: "${item.extracted.variant}" interpreted as dosage strength without deterministic grounding.`;
-	}, [item]);
+	const medicines: ProcessedMedicine[] = data?.medicines ?? [];
 
 	const selectedFileLabel = useMemo(() => {
 		if (!file) return null;
@@ -548,149 +540,117 @@ export default function ClinicalDashboard({ apiUrl }: Props) {
 						)}
 					</AnimatePresence>
 
-					{/* ═══════════ FLOW COMPARISON ═══════════ */}
-					<motion.div variants={fadeUp} className="grid grid-cols-1 gap-5 md:grid-cols-2">
-							{/* FLOW A - Raw Extraction */}
-							<GlassPanel className="flex min-h-[300px] flex-col overflow-hidden border-danger/20">
-								<div className="border-b border-danger/[0.08] bg-danger/[0.03] px-5 py-4">
-									<div className="flex items-center gap-2.5">
-										<span className="flex h-2 w-2 rounded-full bg-danger shadow-[0_0_8px_rgba(255,71,87,0.6)]" />
-										<h2 className="font-display text-sm font-bold tracking-tight">
-											Flow A — Raw Extraction
-										</h2>
-									</div>
-									<p className="mt-1 text-[10px] text-fg-faint">
-										Unpenalized LLM output — may contain hallucinated
-										assumptions
-									</p>
-								</div>
-								<div className="flex flex-1 flex-col gap-4 p-5">
-									<div className="flex items-start gap-2.5 rounded-xl border border-danger/15 bg-danger/[0.04] px-4 py-3">
-										<AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-danger/80" />
-										<p className="text-[11px] leading-relaxed text-danger/70">
-											{flowAWarning ??
-												"Run analysis to inspect raw extraction assumptions."}
-										</p>
-									</div>
-									<div className="flex items-center gap-2 text-[11px] text-fg-dim">
-										<span>Hallucination risk token:</span>
-										<PillBadge className="border-danger/30 bg-danger/10 text-danger">
-											{variantToken ?? "—"}
-										</PillBadge>
-									</div>
-									<pre className="font-code max-h-[360px] flex-1 overflow-auto rounded-xl border border-white/[0.04] bg-deep p-4 text-[11px] leading-relaxed text-fg-dim">
-										{item
-											? JSON.stringify(item.extracted, null, 2)
-											: "// No extraction data yet."}
-									</pre>
-								</div>
+					{/* ═══════════ EMPTY STATE ═══════════ */}
+					{medicines.length === 0 && !loading && !error && (
+						<motion.div variants={fadeUp}>
+							<GlassPanel className="flex flex-col items-center justify-center py-20 text-fg-faint">
+								<CheckCircle2 className="mb-3 h-10 w-10 opacity-15" />
+								<p className="text-[11px]">Run analysis to view grounded output.</p>
 							</GlassPanel>
+						</motion.div>
+					)}
 
-							{/* FLOW B - Grounded Match */}
-							<GlassPanel className="flex min-h-[300px] flex-col overflow-hidden border-safe/20">
-								<div className="border-b border-safe/[0.08] bg-safe/[0.03] px-5 py-4">
-									<div className="flex items-center gap-2.5">
-										<span className="flex h-2 w-2 rounded-full bg-safe shadow-[0_0_8px_rgba(0,214,143,0.6)]" />
-										<h2 className="font-display text-sm font-bold tracking-tight">
-											Flow B — Grounded Match
-										</h2>
-									</div>
-									<p className="mt-1 text-[10px] text-fg-faint">
-										Deterministically verified against local formulary
-									</p>
-								</div>
-								<div className="flex flex-1 flex-col gap-5 p-5">
-									{!item ? (
-										<div className="flex flex-1 flex-col items-center justify-center py-16 text-fg-faint">
-											<CheckCircle2 className="mb-3 h-10 w-10 opacity-15" />
-											<p className="text-[11px]">
-												Run analysis to view grounded output.
-											</p>
+					{/* ═══════════ MEDICINE CARDS ═══════════ */}
+					{medicines.length > 0 && (
+						<motion.div variants={fadeUp} className="space-y-6">
+							{/* Summary header */}
+							<div className="flex items-center gap-3">
+								<Pill className="h-4 w-4 text-brand" />
+								<span className="text-[11px] font-bold uppercase tracking-[0.14em] text-fg-dim">
+									{medicines.length} Medicine{medicines.length !== 1 ? "s" : ""} Analyzed
+								</span>
+								<div className="h-px flex-1 bg-white/[0.04]" />
+							</div>
+
+							{medicines.map((item, idx) => {
+								const variantToken = item.extracted?.variant || null;
+								const flowAWarning = item.extracted?.variant
+									? `Potentially unsafe: "${item.extracted.variant}" interpreted as dosage strength without deterministic grounding.`
+									: "No risky numeric assumption detected in the raw extraction.";
+
+								return (
+									<motion.div
+										key={`med-${idx}`}
+										initial={{ opacity: 0, y: 20 }}
+										animate={{ opacity: 1, y: 0 }}
+										transition={{ duration: 0.4, delay: idx * 0.08 }}
+										className="space-y-3"
+									>
+										{/* Medicine index label */}
+										<div className="flex items-center gap-2">
+											<span className="flex h-5 w-5 items-center justify-center rounded-full bg-brand/20 text-[10px] font-bold text-brand">
+												{idx + 1}
+											</span>
+											<span className="text-[11px] font-semibold text-fg-dim">
+												{item.original_raw_input || `Medicine ${idx + 1}`}
+											</span>
 										</div>
-									) : (
-										<AnimatePresence mode="wait">
-											<motion.div
-												key="results"
-												initial={{ opacity: 0, scale: 0.97 }}
-												animate={{ opacity: 1, scale: 1 }}
-												transition={{
-													duration: 0.4,
-													ease: "easeOut",
-												}}
-												className="space-y-5"
-											>
-												<div className="flex items-center gap-5">
-													<ConfidenceRing
-														score={
-															item.matched_medicine
-																.final_similarity_score
-														}
-													/>
-													<div className="flex-1 space-y-3">
-														<MatchBadges
-															med={item.matched_medicine}
-														/>
+
+										<div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+											{/* FLOW A */}
+											<GlassPanel className="flex min-h-[260px] flex-col overflow-hidden border-danger/20">
+												<div className="border-b border-danger/[0.08] bg-danger/[0.03] px-5 py-4">
+													<div className="flex items-center gap-2.5">
+														<span className="flex h-2 w-2 rounded-full bg-danger shadow-[0_0_8px_rgba(255,71,87,0.6)]" />
+														<h2 className="font-display text-sm font-bold tracking-tight">Flow A — Raw Extraction</h2>
+													</div>
+													<p className="mt-1 text-[10px] text-fg-faint">Unpenalized LLM output — may contain hallucinated assumptions</p>
+												</div>
+												<div className="flex flex-1 flex-col gap-4 p-5">
+													<div className="flex items-start gap-2.5 rounded-xl border border-danger/15 bg-danger/[0.04] px-4 py-3">
+														<AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-danger/80" />
+														<p className="text-[11px] leading-relaxed text-danger/70">{flowAWarning}</p>
+													</div>
+													<div className="flex items-center gap-2 text-[11px] text-fg-dim">
+														<span>Hallucination risk token:</span>
+														<PillBadge className="border-danger/30 bg-danger/10 text-danger">{variantToken ?? "—"}</PillBadge>
+													</div>
+													<pre className="font-code max-h-[280px] flex-1 overflow-auto rounded-xl border border-white/[0.04] bg-deep p-4 text-[11px] leading-relaxed text-fg-dim">
+														{JSON.stringify(item.extracted, null, 2)}
+													</pre>
+												</div>
+											</GlassPanel>
+
+											{/* FLOW B */}
+											<GlassPanel className="flex min-h-[260px] flex-col overflow-hidden border-safe/20">
+												<div className="border-b border-safe/[0.08] bg-safe/[0.03] px-5 py-4">
+													<div className="flex items-center gap-2.5">
+														<span className="flex h-2 w-2 rounded-full bg-safe shadow-[0_0_8px_rgba(0,214,143,0.6)]" />
+														<h2 className="font-display text-sm font-bold tracking-tight">Flow B — Grounded Match</h2>
+													</div>
+													<p className="mt-1 text-[10px] text-fg-faint">Deterministically verified against local formulary</p>
+												</div>
+												<div className="flex flex-1 flex-col gap-5 p-5">
+													<div className="flex items-center gap-5">
+														<ConfidenceRing score={item.matched_medicine.final_similarity_score} />
+														<div className="flex-1 space-y-3">
+															<MatchBadges med={item.matched_medicine} />
+														</div>
+													</div>
+													<div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
+														<DataCell label="Brand Name" value={item.matched_medicine.brand_name} />
+														<DataCell label="Variant (Extracted)" value={item.extracted.variant || "—"} />
+														<DataCell label="Generic Backbone" value={item.matched_medicine.generic_name} />
+														<DataCell label="Physical Form" value={item.matched_medicine.form} />
+														<div className="sm:col-span-2">
+															<DataCell label="Official Strength (SQLite Ground Truth)" value={item.matched_medicine.official_strength} accent="safe" />
+														</div>
+														<div className="flex items-center gap-2.5 sm:col-span-2">
+															<Lock className="h-3.5 w-3.5 text-fg-faint" />
+															<span className="text-[9px] font-bold uppercase tracking-[0.14em] text-fg-faint">Combination Product</span>
+															<PillBadge className={item.matched_medicine.combination_flag ? "border-info/30 bg-info/10 text-info" : "border-white/10 bg-white/[0.03] text-fg-dim"}>
+																{item.matched_medicine.combination_flag ? "Locked as single product" : "No"}
+															</PillBadge>
+														</div>
 													</div>
 												</div>
-												<div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
-													<DataCell
-														label="Brand Name"
-														value={
-															item.matched_medicine.brand_name
-														}
-													/>
-													<DataCell
-														label="Variant (Extracted)"
-														value={
-															item.extracted.variant || "—"
-														}
-													/>
-													<DataCell
-														label="Generic Backbone"
-														value={
-															item.matched_medicine.generic_name
-														}
-													/>
-													<DataCell
-														label="Physical Form"
-														value={item.matched_medicine.form}
-													/>
-													<div className="sm:col-span-2">
-														<DataCell
-															label="Official Strength (SQLite Ground Truth)"
-															value={
-																item.matched_medicine
-																	.official_strength
-															}
-															accent="safe"
-														/>
-													</div>
-													<div className="flex items-center gap-2.5 sm:col-span-2">
-														<Lock className="h-3.5 w-3.5 text-fg-faint" />
-														<span className="text-[9px] font-bold uppercase tracking-[0.14em] text-fg-faint">
-															Combination Product
-														</span>
-														<PillBadge
-															className={
-																item.matched_medicine
-																	.combination_flag
-																	? "border-info/30 bg-info/10 text-info"
-																	: "border-white/10 bg-white/[0.03] text-fg-dim"
-															}
-														>
-															{item.matched_medicine
-																.combination_flag
-																? "Locked as single product"
-																: "No"}
-														</PillBadge>
-													</div>
-												</div>
-											</motion.div>
-										</AnimatePresence>
-									)}
-								</div>
-							</GlassPanel>
-					</motion.div>
+											</GlassPanel>
+										</div>
+									</motion.div>
+								);
+							})}
+						</motion.div>
+					)}
 				</motion.div>
 			</div>
 		</div>

@@ -18,6 +18,12 @@ class ExtractionRequest(BaseModel):
 		return self
 
 
+class ExtractedDataBatch(BaseModel):
+	"""Wrapper schema for OpenAI structured outputs — extracts ALL medicines from
+	a single prescription image in one API call."""
+	medicines: List["ExtractedData"]
+
+
 class ExtractedData(BaseModel):
 	raw_input: str = ""
 	brand: str = Field(validation_alias=AliasChoices("brand", "brand_name"))

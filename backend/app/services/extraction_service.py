@@ -4,6 +4,7 @@ import base64
 import hashlib
 import io
 import json
+import re
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
@@ -11,7 +12,7 @@ import fitz  # PyMuPDF
 from openai import AsyncOpenAI
 
 from app.core.config import settings
-from app.models.schemas import ExtractedData, ExtractedMedicine, ExtractionRequest, ExtractionResponse
+from app.models.schemas import ExtractedData, ExtractedDataBatch, ExtractedMedicine, ExtractionRequest, ExtractionResponse
 
 
 def _compute_image_hash(image_base64: str) -> str:
@@ -181,33 +182,40 @@ def _pdf_base64_to_png_base64_pages(pdf_base64: str) -> List[str]:
 	return png_pages
 
 
-async def _extract_from_openai(image_base64: str) -> Optional[ExtractedMedicine]:
+def _build_image_data_url(payload: str) -> str:
+	trimmed = payload.strip()
+	if trimmed.startswith("data:image/") and ";base64," in trimmed:
+		header, encoded = trimmed.split(",", 1)
+		if not encoded:
+			raise ValueError("Image payload contains empty base64 data")
+		return f"{header},{encoded.strip()}"
+
+	if trimmed.startswith("/9j/"):
+		mime_type = "image/jpeg"
+	elif trimmed.startswith("iVBORw0KGgo"):
+		mime_type = "image/png"
+	elif trimmed.startswith("UklGR"):
+		mime_type = "image/webp"
+	else:
+		mime_type = "image/png"
+
+	return f"data:{mime_type};base64,{trimmed}"
+
+
+async def _extract_from_openai(image_base64: str) -> Optional[List[ExtractedMedicine]]:
+	"""Call OpenAI VLM using ExtractedDataBatch structured output to extract
+	ALL medicines from the prescription image in a single API call."""
 	if not settings.openai_api_key:
 		return None
 
-	def _build_image_data_url(payload: str) -> str:
-		trimmed = payload.strip()
-		if trimmed.startswith("data:image/") and ";base64," in trimmed:
-			header, encoded = trimmed.split(",", 1)
-			if not encoded:
-				raise ValueError("Image payload contains empty base64 data")
-			return f"{header},{encoded.strip()}"
-
-		if trimmed.startswith("/9j/"):
-			mime_type = "image/jpeg"
-		elif trimmed.startswith("iVBORw0KGgo"):
-			mime_type = "image/png"
-		elif trimmed.startswith("UklGR"):
-			mime_type = "image/webp"
-		else:
-			mime_type = "image/png"
-
-		return f"data:{mime_type};base64,{trimmed}"
-
 	client = AsyncOpenAI(api_key=settings.openai_api_key)
 	prompt = (
-		"Extract medicine details from this prescription image and return fields: "
-		"raw_input, brand, variant, generic_name, strength, form, frequency."
+		"You are a clinical pharmacist assistant. "
+		"Extract EVERY medicine listed in this prescription image. "
+		"For each medicine, populate: raw_input (exact text as written), brand, variant "
+		"(numeric-only dosage token if present, e.g. '625'), generic_name, strength "
+		"(value with unit, e.g. '100mg'), form (tablet/capsule/etc.), frequency (BID/TID/etc.). "
+		"Return ALL medicines found — do not stop after the first one."
 	)
 	image_data_url = _build_image_data_url(image_base64)
 
@@ -215,7 +223,7 @@ async def _extract_from_openai(image_base64: str) -> Optional[ExtractedMedicine]
 		response = await client.beta.chat.completions.parse(
 			model=settings.openai_model,
 			messages=[
-				{"role": "system", "content": "You extract medication entities deterministically."},
+				{"role": "system", "content": "You extract ALL medication entities from prescriptions deterministically."},
 				{
 					"role": "user",
 					"content": [
@@ -224,28 +232,66 @@ async def _extract_from_openai(image_base64: str) -> Optional[ExtractedMedicine]
 					],
 				},
 			],
-			response_format=ExtractedData,
+			response_format=ExtractedDataBatch,
 		)
-		parsed = response.choices[0].message.parsed
-		if parsed:
-			return parsed
+		parsed: Optional[ExtractedDataBatch] = response.choices[0].message.parsed
+		if parsed and parsed.medicines:
+			return list(parsed.medicines)
 		return None
 	except Exception as exc:
 		raise ValueError(f"OpenAI VLM extraction failed: {exc}") from exc
 
 
-async def _extract_from_pdf(pdf_base64: str) -> Optional[ExtractedMedicine]:
+async def _extract_from_pdf(pdf_base64: str) -> Optional[List[ExtractedMedicine]]:
 	"""Convert PDF to PNG page images, then run VLM extraction on the first page."""
 	png_pages = _pdf_base64_to_png_base64_pages(pdf_base64)
 	# Use the first page for extraction (most prescriptions are single-page)
 	return await _extract_from_openai(png_pages[0])
 
 
-async def extract_with_vlm(image_base64: str) -> Optional[ExtractedMedicine]:
+async def extract_with_vlm(image_base64: str) -> Optional[List[ExtractedMedicine]]:
 	return await _extract_from_openai(image_base64)
 
 
-async def extract_medicine(request: ExtractionRequest, guardrail_logs: list[str]) -> ExtractedMedicine:
+def _split_raw_text_medicines(raw_text: str) -> List[str]:
+	"""Split raw prescription text into medicine-specific chunks.
+
+	Priority:
+	1) New-line separated entries (common in prescriptions)
+	2) Comma/semicolon/pipe separated entries
+	3) Fallback to the whole input as a single medicine entry
+	"""
+	normalized = " ".join((raw_text or "").split())
+	if not normalized:
+		return []
+
+	line_chunks = [line.strip() for line in re.split(r"[\r\n]+", raw_text or "") if line.strip()]
+	if len(line_chunks) > 1:
+		chunks = line_chunks
+	else:
+		inline_chunks = [part.strip() for part in re.split(r"\s*(?:,|;|\|)\s*", normalized) if part.strip()]
+		chunks = inline_chunks if len(inline_chunks) > 1 else [normalized]
+
+	cleaned_chunks: List[str] = []
+	for chunk in chunks:
+		cleaned = re.sub(r"^\s*(?:[-*]\s*|\d+[)\.\-:]\s*)", "", chunk).strip()
+		if cleaned:
+			cleaned_chunks.append(cleaned)
+
+	# Preserve deterministic order while removing exact duplicates
+	seen: set[str] = set()
+	unique_chunks: List[str] = []
+	for chunk in cleaned_chunks:
+		key = chunk.lower()
+		if key in seen:
+			continue
+		seen.add(key)
+		unique_chunks.append(chunk)
+
+	return unique_chunks
+
+
+async def extract_medicines(request: ExtractionRequest, guardrail_logs: list[str]) -> List[ExtractedMedicine]:
 	# NOTE: Golden cache intercept is handled at the route level (routes.py)
 	# which returns the full pre-computed ExtractionResponse.
 	# This function only handles the actual extraction path.
@@ -261,19 +307,31 @@ async def extract_medicine(request: ExtractionRequest, guardrail_logs: list[str]
 
 		if is_pdf:
 			guardrail_logs.append("PDF detected — converting to PNG for VLM extraction")
-			openai_extracted = await _extract_from_pdf(request.image_base64)
+			openai_extracted_list = await _extract_from_pdf(request.image_base64)
 		else:
-			openai_extracted = await extract_with_vlm(request.image_base64)
+			openai_extracted_list = await extract_with_vlm(request.image_base64)
 
-		if openai_extracted:
-			guardrail_logs.append("Image extracted via OpenAI structured outputs parse()")
-			return openai_extracted
+		if openai_extracted_list:
+			count = len(openai_extracted_list)
+			guardrail_logs.append(
+				f"Image extracted via OpenAI structured outputs parse(): {count} medicine entr{'y' if count == 1 else 'ies'} detected"
+			)
+			return openai_extracted_list
 
 		raise ValueError("OpenAI extraction returned an empty response: no medicine data could be parsed from the image")
 
 	if request.raw_text:
-		guardrail_logs.append("Raw text extracted via local NER parser")
-		return _extract_from_local_ner(request.raw_text)
+		raw_chunks = _split_raw_text_medicines(request.raw_text)
+		if not raw_chunks:
+			raise ValueError("No medicine text could be parsed from raw_text")
+
+		guardrail_logs.append(f"Raw text parsed into {len(raw_chunks)} medicine entr{'y' if len(raw_chunks) == 1 else 'ies'}")
+		return [_extract_from_local_ner(chunk) for chunk in raw_chunks]
 
 	raise ValueError("No image_base64 or raw_text found")
+
+
+async def extract_medicine(request: ExtractionRequest, guardrail_logs: list[str]) -> ExtractedMedicine:
+	extracted_items = await extract_medicines(request, guardrail_logs)
+	return extracted_items[0]
 

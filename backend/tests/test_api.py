@@ -30,3 +30,30 @@ async def test_extract_endpoint_returns_200() -> None:
     assert isinstance(matched["final_similarity_score"], float)
     assert matched["risk_classification"] in {"High", "Medium", "Low"}
     assert matched["clinical_risk_tier"] in {"High", "Medium", "Low"}
+
+
+@pytest.mark.asyncio
+async def test_extract_endpoint_returns_all_results_for_multiple_medicines() -> None:
+    await init_db()
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://testserver") as client:
+        response = await client.post(
+            "/extract",
+            json={
+                "raw_text": "Augmentin 625 Tab BD\nParacetamol 500 Tab TID",
+                "prescriber_id": "dr-1",
+            },
+        )
+
+    assert response.status_code == 200
+    payload = response.json()
+
+    assert "medicines" in payload
+    assert isinstance(payload["medicines"], list)
+    assert len(payload["medicines"]) == 2
+    assert any("analyzed 2 medicine entries" in log for log in payload["guardrail_logs"])
+
+    for item in payload["medicines"]:
+        assert "matched_medicine" in item
+        assert isinstance(item["matched_medicine"]["final_similarity_score"], float)
+        assert item["guardrail_logs"]
